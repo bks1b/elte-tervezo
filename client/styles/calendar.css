@@ -1,0 +1,47 @@
+.fc {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.fc-view-harness {
+  min-width: 650px;
+  pointer-events: none;
+}
+
+.fc-timegrid-event {
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.fc-timegrid-col-events {
+  margin: 0 !important;
+}
+
+.fc-event-main {
+  padding: 3px !important;
+  overflow: hidden;
+}
+
+.fc-event:has(.skipped) {
+  opacity: 0.3;
+}
+
+:is(.fc, .fc-view-harness)::before {
+  z-index: 1;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--bg-surface);
+  content: '';
+}
+
+.fc-view-harness::before {
+  z-index: 2;
+  bottom: 1px;
+  background: var(--fc-border-color);
+}

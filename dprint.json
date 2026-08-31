@@ -1,0 +1,27 @@
+{
+  "lineWidth": 100,
+  "indentWidth": 2,
+  "newLineKind": "crlf",
+  "typescript": {
+    "useBraces": "preferNone",
+    "preferSingleLine": true,
+    "quoteStyle": "alwaysSingle",
+    "module.sortImportDeclarations": "maintain",
+    "arrowFunction.useParentheses": "preferNone",
+    "jsx.multiLineParens": "never",
+    "jsxSelfClosingElement.spaceBeforeSlash": false
+  },
+  "malva": {
+    "printWidth": 60,
+    "quotes": "alwaysSingle",
+    "blockSelectorLinebreak": "wrap",
+    "fontFamilyNames": "wrap",
+    "preferSingleLine": true,
+    "declarationOrder": "smacss"
+  },
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.96.1.wasm",
+    "https://plugins.dprint.dev/json-0.23.0.wasm",
+    "https://plugins.dprint.dev/g-plane/malva-v0.16.0.wasm"
+  ]
+}

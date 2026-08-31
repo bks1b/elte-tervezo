@@ -1,0 +1,64 @@
+.modal {
+  display: grid;
+  z-index: 50;
+  position: fixed;
+  place-items: center;
+  inset: 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+body:has(.modal) {
+  overflow: hidden;
+}
+
+.modal > section {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: fit-content;
+  min-width: min(24rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  padding: 1rem;
+  overflow: hidden;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  > header {
+    position: relative;
+    > input {
+      position: absolute;
+      top: 50%;
+      right: 21px;
+      transform: translateY(-50%);
+    }
+  }
+  > div {
+    display: grid;
+    overflow: auto;
+    gap: 0.5rem;
+  }
+}
+
+.modal footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.location {
+  max-width: 32rem;
+  input:first-of-type {
+    flex: 5;
+  }
+  input:last-of-type {
+    flex: 2;
+    min-width: 0;
+  }
+}
+
+.help .circle {
+  min-height: 2rem;
+}

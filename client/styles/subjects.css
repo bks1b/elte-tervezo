@@ -36,25 +36,28 @@ article {
 }
 
 .modal h2, article h1, td {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
-div:has(> table) {
+div:has(> table):not(.fc *) {
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
 }
 
-table {
-  width: 100%;
+table:not(.fc *) {
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   background: var(--bg-surface);
-}
-
-th, td {
-  padding: 0.75rem 0.8rem;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+  td {
+    max-width: 250px;
+  }
+  th, td {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
 }
 
 th {

@@ -27,8 +27,10 @@ const makeJoin = (X: keyof JSX.IntrinsicElements, f = (x: ReactNode) => x) => (a
 export const joinP = makeJoin('p');
 export const joinUl = makeJoin('li', x => <ul>{x}</ul>);
 
-const isEmpty = (x: unknown) => Array.isArray(x) ? x.every(isEmpty) : !x;
-export const wrapNonEmpty = <T,>(wrapper: (c: T) => ReactNode, x: T) => !isEmpty(x) && wrapper(x);
+type Truthy<T> = Exclude<T, null | undefined | false | 0 | ''>;
+const isNonEmpty = <T,>(x: T): x is Truthy<T> => Array.isArray(x) ? x.some(isNonEmpty) : !!x;
+export const wrapNonEmpty = <T,>(wrapper: (c: Truthy<T>) => ReactNode, x: T) =>
+  isNonEmpty(x) && wrapper(x);
 
 export const options = (names: string[], values?: string[]) =>
   names.map((x, i) => <option key={x} value={values?.[i] ?? x}>{x}</option>);

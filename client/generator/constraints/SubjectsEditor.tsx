@@ -169,13 +169,14 @@ export default (
         wrapNonEmpty(penalty =>
           <>
             <Penalty get={[constraints, x => getGroup(x, path)]}/>
-            {!isMandatory(penalty as number) && <label>
+            <label {...isMandatory(penalty) && { style: { textDecoration: 'line-through' } }}>
               <input
+                disabled={isMandatory(penalty)}
                 type='checkbox'
                 {...checkboxAsProperty(constraints, x => getGroup(x, path))('collisionOnly')()}
               />
               Csak ütközéssel
-            </label>}
+            </label>
           </>, getGroup(subjects[0], path).selected && getGroup(constraints[0], path).penalty)}
     >
       {code => <Penalty get={[constraints, x => x[code]]}/>}

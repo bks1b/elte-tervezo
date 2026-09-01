@@ -106,7 +106,7 @@ export default () => {
           </button>
         </>}
       column={(path, index) =>
-        <div className='actions'>
+        <>
           <button
             className='circle'
             onClick={() =>
@@ -138,7 +138,7 @@ export default () => {
           >
             <Trash2/>
           </button>
-        </div>}
+        </>}
     />
   </section>;
 };

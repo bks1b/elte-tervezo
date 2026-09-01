@@ -23,7 +23,7 @@
 }
 
 .fc-event-main {
-  padding: 3px !important;
+  padding: 1px 3px 3px !important;
   overflow: hidden;
 }
 
@@ -37,4 +37,14 @@
 
 .fc-event:has(.skipped) {
   opacity: 0.3;
+}
+
+.fc-event-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fc-day-today {
+  background-color: unset !important;
 }

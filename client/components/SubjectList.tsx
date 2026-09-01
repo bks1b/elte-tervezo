@@ -64,6 +64,9 @@ export default <T,>(
             shown =>
               <div>
                 <table>
+                  {canEdit && <colgroup>
+                    <col style={{ width: 0 }}/>
+                  </colgroup>}
                   <thead>
                     <tr>
                       {canEdit

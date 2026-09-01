@@ -28,7 +28,7 @@ export const CourseHeaders = () =>
     <th>Időpont</th>
     <th>Oktató</th>
     <th>Helyszín</th>
-    <th/>
+    <th>Egyéb</th>
   </>;
 
 export default (

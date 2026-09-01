@@ -69,7 +69,7 @@ export default (
   }, [subjects]);
   useEffect(() => {
     const observer = new MutationObserver(adjustMargin);
-    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('resize', adjustMargin);
     return () => {
       observer.disconnect();

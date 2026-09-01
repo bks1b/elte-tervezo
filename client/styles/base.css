@@ -39,6 +39,7 @@ h1, h2 {
 
 button, input:not(:is([type='range'], [type='checkbox'])),
 select {
+  min-width: 2.6rem;
   max-width: 100%;
   min-height: 2.6rem;
   padding: 0.6rem 0.75rem;

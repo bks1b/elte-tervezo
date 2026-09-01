@@ -1,4 +1,4 @@
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import ical, { ICalEventRepeatingFreq, ICalWeekday } from 'ical-generator';
 import { CalendarIcon, Camera } from 'lucide-react';
 
@@ -26,7 +26,7 @@ const ICAL_DAYS = [
 ];
 
 export default () => {
-  const { request } = useRequest();
+  const { request, courseTypes } = useRequest();
   const { subjects, semester } = useData();
   const setModal = useSetModal();
   const semesterRanges = useAsync(() => request<Dict<string[]>>('semesters'));
@@ -73,16 +73,17 @@ export default () => {
         return calendar;
       };
       return <>
-        <button
+        <DisabledButton
+          disabled={!courseTypes}
           onClick={async () =>
             download(
               'orarend.png',
-              (await html2canvas(document.querySelector('.fc-scrollgrid')!)).toDataURL('image/png'),
+              await toPng(document.querySelector<HTMLElement>('.fc-scrollgrid')!),
             )}
         >
           <Camera/>
           Mentés képként
-        </button>
+        </DisabledButton>
         <DisabledButton
           disabled={!semesterRanges}
           onClick={() =>

@@ -18,7 +18,7 @@
     "@vercel/functions": "^3.9.3",
     "@vercel/speed-insights": "^2.0.0",
     "fuse.js": "^7.5.0",
-    "html2canvas": "^1.4.1",
+    "html-to-image": "^1.11.13",
     "ical-generator": "^11.1.0",
     "immer": "^11.1.16",
     "lucide-react": "^1.30.0",

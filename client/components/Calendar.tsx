@@ -3,7 +3,7 @@ import momentTimezonePlugin from '@fullcalendar/moment-timezone';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { Calendar } from 'lucide-react';
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useImmer } from 'use-immer';
 
 import { DAYS, SHIFTED_DAYS, timeToMinutes } from '../../shared/dates';
@@ -20,6 +20,14 @@ const SLOT_DURATION = '00:30:00';
 
 type ExtendedProps = {
   extendedProps: { subject: Subject; index: number; course: CourseWithSchedule; path: CoursePath };
+};
+
+const adjustMargin = () => {
+  const fc = document.querySelector<HTMLElement>('.fc');
+  if (fc) {
+    fc.style.marginTop =
+      (parseFloat(getComputedStyle(fc).marginTop) - fc.getBoundingClientRect().top) % 1 + 'px';
+  }
 };
 
 export default (
@@ -59,6 +67,15 @@ export default (
       DAYS.flatMap((day, i) => arr.some(x => x.extendedProps.course.day === day) ? [] : [i]),
     ];
   }, [subjects]);
+  useEffect(() => {
+    const observer = new MutationObserver(adjustMargin);
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    window.addEventListener('resize', adjustMargin);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', adjustMargin);
+    };
+  }, []);
   return <section className='surface'>
     <Modal
       state={eventModal}

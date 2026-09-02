@@ -6,10 +6,10 @@
 
 :root {
   color-scheme: light;
-  --bg-base: #f4f6fb;
+  --bg-base: #e7e8ec;
   --bg-surface: #ffffff;
   --text: #182033;
-  --border: rgba(40, 54, 84, 0.16);
+  --border: rgba(40, 54, 84, 0.25);
   --radius: 18px;
   --accent: #1f5eff;
 }
@@ -19,7 +19,7 @@
   --bg-base: #0f1420;
   --bg-surface: #161c2b;
   --text: #eef2ff;
-  --border: rgba(162, 175, 204, 0.18);
+  --border: rgba(162, 175, 204, 0.2);
 }
 
 main {

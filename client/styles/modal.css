@@ -29,9 +29,7 @@ body:has(.modal) {
     position: relative;
     > input {
       position: absolute;
-      top: 50%;
-      right: 21px;
-      transform: translateY(-50%);
+      left: 17px;
     }
   }
   > div {

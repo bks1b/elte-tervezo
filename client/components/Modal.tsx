@@ -13,11 +13,11 @@ export type Handler<T> = { handler?: (x: T) => unknown };
 export type WithHandler<T> = T & Handler<T>;
 
 export default <T,>(
-  { state, title, children, button, handler, closeHandler }: {
+  { state, title, children, checkbox, handler, closeHandler }: {
     state: State<T>;
     title: (x: T) => string;
     children: ModalChild<T>;
-    button?: ModalChild<T>;
+    checkbox?: ModalChild<T>;
     closeHandler?: true | (() => unknown);
   } & Handler<T>,
 ) => {
@@ -29,8 +29,8 @@ export default <T,>(
     <div className='modal' onClick={close}>
       <section onClick={e => e.stopPropagation()}>
         <header>
+          {checkbox?.(state[0], state[1])}
           <h2 style={{ fontSize: '1.15rem' }}>{title(state[0])}</h2>
-          {button?.(state[0], state[1])}
         </header>
         <div>{children(state[0], state[1])}</div>
         <footer>

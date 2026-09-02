@@ -34,7 +34,7 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
     <Modal
       state={state}
       title={() => 'Találatok'}
-      button={(results, set) =>
+      checkbox={(results, set) =>
         wrapNonEmpty(keys =>
           <input
             type='checkbox'
@@ -74,7 +74,7 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
           <SubjectList
             get={[state, x => x.subjects]}
             fallback={'Nincs találat.'}
-            buttons={code =>
+            checkbox={code =>
               <input type='checkbox' {...checkboxAsProperty(state, x => x.selected)(code)()}/>}
           />
         </>}

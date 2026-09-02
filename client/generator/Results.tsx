@@ -39,12 +39,11 @@ export default ({ results }: { results: SearchHandler }) => {
       {wrapNonEmpty(
         x => <div className='grid'>{x}</div>,
         [
-          solution
-          && [
-            <div key={0}>
-              {solution.penalty} hibapont
-              {solution.penalty && joinMap(solution.violations)}
-            </div>,
+          solution && [
+            wrapNonEmpty(
+              x => <div key={0}>{x} hibapont{joinMap(solution.violations)}</div>,
+              solution.penalty,
+            ),
             wrapNonEmpty(
               x => <div key={1}>Kihagyott tárgyak:{x}</div>,
               solution.violations[ViolationType.SUBJECT_SKIP]

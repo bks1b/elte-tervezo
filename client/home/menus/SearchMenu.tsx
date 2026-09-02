@@ -31,13 +31,14 @@ export default (
   return <section className='surface menu'>
     <div className='toolbar'>
       {semester.select}
-      <button
-        style={{ marginLeft: 'auto' }}
-        onClick={async () => setResults(withSelected(await bulkSearch(path, subjects[0]), true))}
-      >
-        <RefreshCw/>
-        Órarendi adatok frissítése
-      </button>
+      {!!Object.keys(subjects[0]).length
+        && <button
+          style={{ marginLeft: 'auto' }}
+          onClick={async () => setResults(withSelected(await bulkSearch(path, subjects[0]), true))}
+        >
+          <RefreshCw/>
+          Órarendi adatok frissítése
+        </button>}
     </div>
     <section>{desc}</section>
     <div className='operations'>

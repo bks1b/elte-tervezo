@@ -141,6 +141,8 @@ export default (
             </div>}
         />
       </>
+      : skipped
+      ? 'Az órarendben nem szerepel egy tárgy sem.'
       : 'Keress vagy adj hozzá tárgyakat, és válassz ki kurzusokat az órarend megjelenítéséhez.'}
   </section>;
 };

@@ -20,6 +20,7 @@
 .fc-timegrid-col-events {
   margin: 0 !important;
   outline: 1px solid var(--fc-border-color);
+  text-align: center;
 }
 
 .fc-event-main {

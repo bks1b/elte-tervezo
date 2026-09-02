@@ -10,7 +10,7 @@ import { ModalType, useSetModal } from './modal';
 
 const REQUEST_TIMEOUT = 750;
 
-type RequestHandler = <T>(path: string, body?: Dict, silent?: boolean) => Promise<T>;
+type RequestHandler = <T>(path: string, body?: Dict, quiet?: boolean) => Promise<T>;
 
 const RequestContext = createContext<
   {
@@ -26,6 +26,9 @@ export const RequestProvider = ({ children }: { children: ReactNode }) => {
   const { semester } = useData();
   const setModal = useSetModal();
   const pending = useState<number>();
+  const retries = useState<
+    { fn: () => Promise<unknown>; resolve: (x: unknown) => void; reject: () => void }[]
+  >();
   const request: RequestHandler = async (path, body, quiet = !body) => {
     if (!quiet && path.startsWith('sheet/') && semester.value !== semesterNames[0]) {
       throw setModal(
@@ -42,18 +45,13 @@ export const RequestProvider = ({ children }: { children: ReactNode }) => {
       return await res.json();
     } catch (error) {
       console.error(error);
-      return new Promise<unknown>((res, rej) =>
-        setModal(
-          ModalType.ERROR,
-          'Sikertelen kérés. Újrapróbálod?',
-          () => request(path, body, quiet).then(res).catch(rej),
-          rej,
-        )
+      return new Promise<unknown>((resolve, reject) =>
+        retries[1](arr => [...arr || [], { fn: () => request(path, body, quiet), resolve, reject }])
       );
     } finally {
       if (timeout) {
         clearTimeout(timeout);
-        pending[1](x => x! - +exceeded || undefined);
+        pending[1](x => x && x - +exceeded || undefined);
       }
     }
   };
@@ -76,8 +74,16 @@ export const RequestProvider = ({ children }: { children: ReactNode }) => {
       courseTypes: useAsync(() => request<string[]>('sheet/course-types')),
     }}
   >
-    <Modal state={pending} title={() => 'Betöltés'} closeHandler={() => pending[1](x => x! - 1)}>
-      {x => `${x > 1 ? x : 'A'} kérés folyamatban van...`}
+    <Modal state={pending} title={() => 'Betöltés'} closeHandler>
+      {() => 'A kérés folyamatban van...'}
+    </Modal>
+    <Modal
+      state={retries}
+      title={() => 'Hiba'}
+      handler={arr => arr.forEach(({ fn, resolve, reject }) => fn().then(resolve).catch(reject))}
+      closeHandler={arr => arr.forEach(({ reject }) => reject())}
+    >
+      {() => 'Sikertelen kérés. Újrapróbálod?'}
     </Modal>
     {children}
   </RequestContext.Provider>;

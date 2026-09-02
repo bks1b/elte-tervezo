@@ -18,11 +18,11 @@ export default <T,>(
     title: (x: T) => string;
     children: ModalChild<T>;
     checkbox?: ModalChild<T>;
-    closeHandler?: true | (() => unknown);
+    closeHandler?: true | ((x: T) => unknown);
   } & Handler<T>,
 ) => {
   const close = () => {
-    if (typeof closeHandler === 'function') closeHandler();
+    if (typeof closeHandler === 'function') closeHandler(state[0]!);
     state[1](undefined);
   };
   return state[0] !== undefined && createPortal(

@@ -19,9 +19,13 @@
   }
 }
 
-.menu > * {
-  width: min(100%, 54rem);
-  margin: 0 auto;
+.menu {
+  > * {
+    margin: 0 auto;
+  }
+  > :not(.toolbar) {
+    width: min(100%, 54rem);
+  }
 }
 
 .operations, .operations > section {

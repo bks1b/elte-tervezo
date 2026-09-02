@@ -1,11 +1,14 @@
 import { RefreshCw, Search } from 'lucide-react';
 import { ReactNode } from 'react';
 
+import { flattenSubjects, mergeData } from '../../../shared/helpers';
 import { Dict, Subjects } from '../../../shared/types';
+import { join } from '../../../shared/utils';
 import { useData } from '../../contexts/data';
 import { useRequest } from '../../contexts/request';
 import { useInputRef } from '../../utils/hooks';
 import { useSetResults, withSelected } from '../results';
+import ImportButton from './ImportButton';
 
 export const SEARCH_MODES = [['Tárgy', 'Oktató'], ['0', '1'], [
   'Tárgynév, tárgykód vagy kurzuskód',
@@ -24,20 +27,32 @@ export default (
   },
 ) => {
   const { semester, subjects } = useData();
-  const { bulkSearch } = useRequest();
-  const setResults = useSetResults();
   const { request } = useRequest();
+  const setResults = useSetResults();
   const query = useInputRef();
+  const bulkSearch = (data: Subjects) =>
+    request<Subjects>(path + '/bulk-search', {
+      semester: semester.value,
+      id: flattenSubjects(
+        data,
+        (group, [, , id]) => group.selected ? [id] : [],
+        undefined,
+        (selected, code) =>
+          selected.length
+            ? selected.map(x => join(code, x))
+            : [code],
+      ) + '',
+    });
   return <section className='surface menu'>
     <div className='toolbar'>
       {semester.select}
+      <ImportButton handle={async res => mergeData(res, await bulkSearch(res))}/>
       {!!Object.keys(subjects[0]).length
         && <button
-          style={{ marginLeft: 'auto' }}
-          onClick={async () => setResults(withSelected(await bulkSearch(path, subjects[0]), true))}
+          onClick={async () => setResults(withSelected(await bulkSearch(subjects[0]), true))}
         >
           <RefreshCw/>
-          Órarendi adatok frissítése
+          Mentett tárgyak frissítése
         </button>}
     </div>
     <section>{desc}</section>

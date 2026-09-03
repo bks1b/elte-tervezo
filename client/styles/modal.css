@@ -58,5 +58,6 @@ body:has(.modal) {
 }
 
 .help .circle {
+  min-width: 2rem;
   min-height: 2rem;
 }

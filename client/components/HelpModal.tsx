@@ -1,4 +1,4 @@
-import { ChevronDown, HelpCircle, Merge, Pencil, Plus, Search } from 'lucide-react';
+import { ChevronDown, HelpCircle, Merge, Pencil, Plus, Search, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 import { loadStorage, StorageKey, writeStorage } from '../utils/browser';
@@ -35,7 +35,11 @@ export default () => {
             <button className='circle'>
               <Pencil/>
             </button>{' '}
-            szerkeszteni, vagy a Neptunból importálni.
+            szerkeszteni, vagy a{' '}
+            <button className='circle'>
+              <Upload/>
+            </button>{' '}
+            Neptunból importálni.
           </p>
           <p>
             A hivatalos adatok feldolgozásra kerülnek, pl. a többszörösen felsorolt kurzusok

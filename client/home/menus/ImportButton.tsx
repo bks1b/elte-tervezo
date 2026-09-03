@@ -56,6 +56,6 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
       )}
   >
     <Upload/>
-    Importálás Neptunból
+    {handle ? 'Felvett kurzusok betöltése' : 'Importálás Neptunból'}
   </button>;
 };

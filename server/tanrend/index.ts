@@ -1,8 +1,6 @@
-import { semesterWeeks } from '../../shared/dates.js';
 import { TANREND_URL } from '../../shared/helpers.js';
 import { Dict, Subjects } from '../../shared/types.js';
 import cache from '../cache.js';
-import { getSemesters } from '../semesters.js';
 import { getGroupCounts } from '../sheet/index.js';
 import { GRADES, GROUPS, ID_SUFFIX, normalizeQuery } from '../utils.js';
 import parse from './parser.js';
@@ -18,20 +16,16 @@ const request = (path: string, body: Dict = {}, post?: true) =>
 export const SEARCH_MODES = [['keresnevre', 'keres_kod_azon'], ['keres_okt', 'keres_oktnk']];
 
 export const search = (semester: string, query: string, mode: string, subjects: Subjects = {}) =>
-  Promise.all([
-    request('tanrendnavigation.php', {
-      f: semester,
-      m: mode,
-      k: mode === SEARCH_MODES[0][1] ? query.replace(ID_SUFFIX, '') : query,
-    }),
-    getSemesters(),
-  ]).then(([page, semesters]) =>
+  request('tanrendnavigation.php', {
+    f: semester,
+    m: mode,
+    k: mode === SEARCH_MODES[0][1] ? query.replace(ID_SUFFIX, '') : query,
+  }).then(page =>
     Array.from(page.matchAll(/<tr>(.+?)<\/tr>/g)).slice(1).reduce(
       (_, row) =>
         parse(
           subjects,
           Array.from(row[1].matchAll(/<td .+?>(.+?)</g)).map(x => x[1]),
-          semesterWeeks(semesters[semester]) - 1,
           ...mode === SEARCH_MODES[0][1] ? [query] : [],
         ),
       subjects,
@@ -63,7 +57,7 @@ export const getGroups = cache(
             (n || group[2] ? n + +!(group[0] && !group[2]) + '.' : 'Neumann')
             + (group[0] && ` (${group[0]})`),
             m[1],
-          ]).slice(...i ? [0, counts[group[0]][grade]] : [])
+          ]).slice(...i && counts ? [0, counts[group[0]][grade]] : [])
         ),
       ]))
     ),

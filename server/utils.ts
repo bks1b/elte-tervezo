@@ -31,8 +31,9 @@ export const normalizeQuery = (q: string) => q.trim().toLowerCase();
 
 export const memoize = <A extends unknown[], T, U>(
   f: (...args: A) => Promise<T>,
-  g: (x: T) => U,
+  g: (x: NonNullable<T>) => U,
 ) => {
   let result: U | undefined;
-  return async (...args: A) => result ??= await g(await f(...args));
+  return async (...args: A) =>
+    result ??= await f(...args).then(x => x && g(x)) as U | T & undefined;
 };

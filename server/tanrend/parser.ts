@@ -1,4 +1,4 @@
-import { DAYS } from '../../shared/dates.js';
+import { DAYS, SEMESTER_WEEKS } from '../../shared/dates.js';
 import { addCourse, capitalize, resolveName, resolveTime } from '../../shared/parsers.js';
 import { Subjects } from '../../shared/types.js';
 
@@ -12,7 +12,7 @@ enum TanrendColumn {
 
 const EXCLUDED_TYPES = ['teremfoglalás', 'elfoglaltság'];
 
-export default (target: Subjects, row: string[], defaultWeeks: number, query?: string) => {
+export default (target: Subjects, row: string[], query?: string) => {
   const [fullId = '', type = ''] = row[TanrendColumn.ID].split(' ');
   const typeName = type.slice(1, -1);
   if (EXCLUDED_TYPES.includes(typeName)) return target;
@@ -41,7 +41,9 @@ export default (target: Subjects, row: string[], defaultWeeks: number, query?: s
       ...time && { time: resolveTime(time) },
       ...notes.length && { notes },
       ...weeks
-        ? (arr => arr.length !== defaultWeeks && { weeks: arr.map(x => +x) })(weeks.split(','))
+        ? (arr => arr.length !== SEMESTER_WEEKS - 1 && { weeks: arr.map(x => +x) })(
+          weeks.split(','),
+        )
         : { partial: true },
     },
     !!query && query === fullId.toLowerCase(),

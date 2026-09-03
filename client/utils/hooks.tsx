@@ -25,7 +25,7 @@ export const useSelect = <T extends string[] | undefined>(names: T, label?: stri
   const element = names ? <select ref={ref}>{options(names, values)}</select> : <LoadingSelect/>;
   return {
     get value() {
-      return ref.current?.value as string | (undefined extends T ? undefined : never);
+      return ref.current?.value as string | T & undefined;
     },
     select: label ? <label>{label}: {element}</label> : element,
   };

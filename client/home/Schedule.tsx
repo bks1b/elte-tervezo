@@ -2,7 +2,7 @@ import { toPng } from 'html-to-image';
 import ical, { ICalEventRepeatingFreq, ICalWeekday } from 'ical-generator';
 import { CalendarIcon, Camera } from 'lucide-react';
 
-import { DAY, MINUTE, semesterWeeks, SHIFTED_DAYS, timeToMinutes, WEEK } from '../../shared/dates';
+import { DAY, MINUTE, SEMESTER_WEEKS, SHIFTED_DAYS, timeToMinutes, WEEK } from '../../shared/dates';
 import { courseId } from '../../shared/helpers';
 import { Dict } from '../../shared/types';
 import { getRuns, join } from '../../shared/utils';
@@ -26,11 +26,10 @@ const ICAL_DAYS = [
 ];
 
 export default () => {
-  const { request, courseTypes } = useRequest();
+  const { request } = useRequest();
   const { subjects, semester } = useData();
   const setModal = useSetModal();
-  const semesterRanges = useAsync(() => request<Dict<string[]>>('semesters'));
-  const semesterRange = () => semesterRanges![semester.value];
+  const semesters = useAsync(() => request<Dict>('semesters'));
   return <Calendar subjects={subjects[0]}>
     {events => {
       const getCalendar = () => {
@@ -39,8 +38,7 @@ export default () => {
           const { extendedProps: { subject, course, path, index } } = event;
           for (
             const run of getRuns(
-              course.weeks
-                ?? Array.from({ length: semesterWeeks(semesterRange()) }, (_, i) => i + 2),
+              course.weeks ?? Array.from({ length: SEMESTER_WEEKS }, (_, i) => i + 2),
               r => [r[0], r.length],
             )
           ) {
@@ -52,7 +50,7 @@ export default () => {
                   key,
                   (date => new Date(+date + date.getTimezoneOffset() * MINUTE))(
                     new Date(
-                      +new Date(semesterRange()[0])
+                      +new Date(semesters![semester.value])
                         + (run[0] - 2) * WEEK
                         + SHIFTED_DAYS.indexOf(event.daysOfWeek[0]) * DAY
                         + timeToMinutes(event[`${key}Time`]) * MINUTE,
@@ -73,8 +71,7 @@ export default () => {
         return calendar;
       };
       return <>
-        <DisabledButton
-          disabled={!courseTypes}
+        <button
           onClick={async () =>
             download(
               'orarend.png',
@@ -83,15 +80,15 @@ export default () => {
         >
           <Camera/>
           Mentés képként
-        </DisabledButton>
+        </button>
         <DisabledButton
-          disabled={!semesterRanges}
+          disabled={!semesters}
           onClick={() =>
             setModal(
               ModalType.INFO,
-              `A generált órarend a ${semester.value} félév szorgalmi időszakára vonatkozik: ${
-                semesterRange().map(x => x.replaceAll('-', '.') + '.').join('-')
-              }`,
+              `A generált órarend a ${semester.value} félév szorgalmi időszakával kezdődik: ${
+                semesters![semester.value].replaceAll('-', '.')
+              }.`,
               () =>
                 download(
                   'orarend.ics',

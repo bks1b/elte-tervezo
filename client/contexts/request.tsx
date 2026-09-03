@@ -36,8 +36,16 @@ export const RequestProvider = ({ children }: { children: ReactNode }) => {
     try {
       const res = await fetch('/api/' + path + (body ? '?' + new URLSearchParams(body) : ''));
       if (!res.ok) throw new Error(res.statusText);
-      return await res.json();
+      const text = await res.text();
+      if (!text) {
+        throw setModal(
+          ModalType.ERROR,
+          'A Neptun jelenleg nem elérhető, ezért az oldal egyes funkciói nem működnek.',
+        );
+      }
+      return JSON.parse(text);
     } catch (error) {
+      if (!error) throw error;
       console.error(error);
       return new Promise<unknown>((resolve, reject) =>
         retries[1](arr => [...arr || [], { fn: () => request(path, body, quiet), resolve, reject }])

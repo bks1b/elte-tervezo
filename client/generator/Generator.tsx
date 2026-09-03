@@ -67,7 +67,10 @@ export default () => {
     loadStorage(StorageKey.DAY_CONSTRAINTS) || DEFAULT_CONSTRAINTS
   );
   const loading = !useAsync(
-    () => request<string[][]>('sheet/optionalities', { id: Object.keys(subjects[0]) + '' }, true),
+    () =>
+      request<string[][]>('sheet/optionalities', { id: Object.keys(subjects[0]) + '' }, true).catch(
+        () => []
+      ),
     res =>
       subjectConstraints[1](draft =>
         res.forEach(x =>

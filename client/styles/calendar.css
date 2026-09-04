@@ -3,6 +3,10 @@
   overflow-x: auto;
 }
 
+.fc-scrollgrid {
+  background: var(--bg-surface);
+}
+
 .fc-view-harness {
   min-width: 700px;
   pointer-events: none;
@@ -20,7 +24,6 @@
 .fc-timegrid-col-events {
   margin: 0 !important;
   outline: 1px solid var(--fc-border-color);
-  text-align: center;
 }
 
 .fc-event-main {
@@ -40,12 +43,6 @@
   opacity: 0.3;
 }
 
-.fc-event-main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .fc-day-today {
-  background-color: unset !important;
+  background: unset !important;
 }

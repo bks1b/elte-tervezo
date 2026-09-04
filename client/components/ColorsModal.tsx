@@ -34,7 +34,7 @@ export default () => {
     if (!courseTypes) return;
     const sheet = document.createElement('style');
     sheet.textContent = courseTypes.map(className).map(x =>
-      `:is(.fc-event, .fc-event-main):has(.${x}){background-color:var(--${x});}`
+      `.fc-event:has(.${x}){background:var(--${x});}`
     ).join('');
     document.head.appendChild(sheet);
     return () => sheet.remove();

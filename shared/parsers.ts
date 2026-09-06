@@ -30,10 +30,7 @@ export const addCourse = (
       !x[key] || JSON.stringify(x[key]) === JSON.stringify(course[key])
     )
   );
-  if (!existing) {
-    group.courses.push(course);
-    return target;
-  }
+  if (!existing) return void group.courses.push(course);
   const mergeProperty = <
     K extends keyof Course,
     T = NonNullable<Course[K]> extends (infer X)[] ? X : never,
@@ -49,5 +46,4 @@ export const addCourse = (
   existing.time ||= course.time;
   existing.partial ||= course.partial;
   existing.weeks ||= course.weeks;
-  return target;
 };

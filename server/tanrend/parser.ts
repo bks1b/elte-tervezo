@@ -1,6 +1,7 @@
 import { DAYS, SEMESTER_WEEKS } from '../../shared/dates.js';
 import { addCourse, capitalize, resolveName, resolveTime } from '../../shared/parsers.js';
 import { Subjects } from '../../shared/types.js';
+import { COURSE_ID } from '../utils.js';
 
 enum TanrendColumn {
   SCHEDULE = 0,
@@ -12,32 +13,33 @@ enum TanrendColumn {
 
 const EXCLUDED_TYPES = ['teremfoglalás', 'elfoglaltság'];
 
-export default (target: Subjects, row: string[], query?: string) => {
+export default (target: Subjects, row: string[], alias?: string) => {
   const [fullId = '', type = ''] = row[TanrendColumn.ID].split(' ');
   const typeName = type.slice(1, -1);
-  if (EXCLUDED_TYPES.includes(typeName)) return target;
-  const [, code = '', id = ''] = fullId.match(/^(.+)-(.+)$/) || [];
+  if (EXCLUDED_TYPES.includes(typeName)) return;
+  const [, code = '', id = ''] = fullId.match(COURSE_ID) || [];
   const [schedule = '', weeks = ''] = row[TanrendColumn.SCHEDULE].split(' Hetek: ');
   const [day = '', time = ''] = schedule.split(' ');
-  const fixedDay = day.replace(/(?<=^Hétf)o$/, 'ő');
   const notes: string[] = [];
-  const teachers = row[TanrendColumn.TEACHER].replaceAll(
-    /(?:\s*\((.+?)\)|\s-(.+))/g,
-    (_, x, y) => (notes.push(x || y), ''),
-  ).trim();
-  const lagymanyos = row[TanrendColumn.LOCATION].match(/^(.).+?\sTömb\s(\d+[-.]\d+)/);
-  return addCourse(
+  addCourse(
     target,
-    [code, capitalize(typeName), id],
+    [!target[code] && alias || code, capitalize(typeName), id],
     {
       locations: row[TanrendColumn.LOCATION] && row[TanrendColumn.LOCATION] !== '-'
         ? [{
           name: row[TanrendColumn.LOCATION],
-          ...lagymanyos && { id: `L${lagymanyos[1]}-${lagymanyos[2]}` },
+          ...(m => m && { id: `L${m[1]}-${m[2]}` })(
+            row[TanrendColumn.LOCATION].match(/^(.).+?\sTömb\s(\d+[-.]\d+)/),
+          ),
         }]
         : [],
-      teachers: teachers ? teachers.split(/\s*,\s*/) : [],
-      ...DAYS.includes(fixedDay) && { day: fixedDay },
+      teachers: (str => str ? str.split(/\s*,\s*/) : [])(
+        row[TanrendColumn.TEACHER].replaceAll(
+          /(?:\s*\((.+?)\)|\s-(.+))/g,
+          (_, x, y) => (notes.push(x || y), ''),
+        ).trim(),
+      ),
+      ...(str => DAYS.includes(str) && { day: str })(day.replace(/(?<=^Hétf)o$/, 'ő')),
       ...time && { time: resolveTime(time) },
       ...notes.length && { notes },
       ...weeks
@@ -46,7 +48,7 @@ export default (target: Subjects, row: string[], query?: string) => {
         )
         : { partial: true },
     },
-    !!query && query === fullId.toLowerCase(),
+    false,
     resolveName(row[TanrendColumn.NAME]),
   );
 };

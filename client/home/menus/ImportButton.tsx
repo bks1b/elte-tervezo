@@ -36,22 +36,25 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
           upload('.xlsx').then(file => file.arrayBuffer()).then(read).then(async workbook => {
             if (workbook.SheetNames[0] !== SHEET_NAME)
               throw setModal(ModalType.ERROR, 'A fájl nem az elvárt forrásból származik.');
-            const data =
-              (utils.sheet_to_json(workbook.Sheets[SHEET_NAME], {
+            const results: Subjects = {};
+            for (
+              const row of utils.sheet_to_json(workbook.Sheets[SHEET_NAME], {
                 range: 1,
                 header: 1,
                 raw: true,
-              }) as string[][]).reduce((results, row) =>
-                parseSheet(
-                  results,
-                  [row[ImportColumn.CODE], row[ImportColumn.TYPE], row[ImportColumn.ID]],
-                  row[ImportColumn.NAME],
-                  row[ImportColumn.TEACHER].split(', '),
-                  row[ImportColumn.SCHEDULE],
-                  true,
-                ), {} as Subjects);
-            await handle?.(data);
-            setResults(withSelected(data, true));
+              }) as string[][]
+            ) {
+              parseSheet(
+                results,
+                [row[ImportColumn.CODE], row[ImportColumn.TYPE], row[ImportColumn.ID]],
+                row[ImportColumn.NAME],
+                row[ImportColumn.TEACHER].split(', '),
+                row[ImportColumn.SCHEDULE],
+                true,
+              );
+            }
+            await handle?.(results);
+            setResults(withSelected(results, true));
           }),
       )}
   >

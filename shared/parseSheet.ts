@@ -16,10 +16,10 @@ export default (
   const [notes, scheduleNotes] = Array.from(
     new Set(scheduleString && scheduleString.split(/\s*;\s*/)),
   ).reduce((r, x) => (r[+SCHEDULE_REGEX.test(x)].push(x), r), [[], []] as string[][]);
-  return (scheduleNotes.length ? scheduleNotes : ['']).reduce((_, note) => {
+  for (const note of scheduleNotes.length ? scheduleNotes : ['']) {
     const [, scheduleData = '', location = ''] = note.match(SCHEDULE_REGEX) || [];
     const [, day = '', time = ''] = scheduleData.match(/^(.+?):(.+)$/) || [];
-    return addCourse(
+    addCourse(
       target,
       path,
       {
@@ -35,5 +35,5 @@ export default (
       selected,
       resolveName(name),
     );
-  }, target);
+  }
 };

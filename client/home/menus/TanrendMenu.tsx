@@ -42,13 +42,14 @@ export default () => {
         visszamenőleg is.
       </p>
     }
-    beforeInput={
+    label='Tárgykód aliasok használata'
+    select={
       <select {...valueAsProperty(searchMode)('value')()}>
         {options(SEARCH_MODES[0], SEARCH_MODES[1])}
       </select>
     }
     searchMode={+searchMode[0].value}
-    params={() => ({ semester: semester.value, mode: searchMode[0].value })}
+    params={resolve => ({ semester: semester.value, mode: searchMode[0].value, resolve })}
   >
     <h2>Fix csoportos órarendek</h2>
     <div className='toolbar'>

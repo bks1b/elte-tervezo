@@ -4,6 +4,7 @@ import { useImmer } from 'use-immer';
 import { courseId, getGroup, getGroups } from '../../../shared/helpers';
 import { addCourse } from '../../../shared/parsers';
 import { CoursePath, Subjects } from '../../../shared/types';
+import { mapEntries } from '../../../shared/utils';
 import SubjectList from '../../components/SubjectList';
 import { useData } from '../../contexts/data';
 import { ModalType, useSetModal } from '../../contexts/modal';
@@ -75,7 +76,7 @@ export default () => {
                 path: [code, courseTypes![0], ''],
                 handler: ({ course, path }) =>
                   subjects[1](draft =>
-                    void addCourse(
+                    addCourse(
                       draft,
                       [...path.slice(0, -1), path[2].trim()] as CoursePath,
                       course,
@@ -94,11 +95,7 @@ export default () => {
                 code,
                 handler: state =>
                   subjects[1](
-                    Object.fromEntries(
-                      Object.entries(subjects[0]).map(x =>
-                        x[0] === code ? [state.code, state.subject] : x
-                      ),
-                    ),
+                    mapEntries(subjects[0], x => [x[0] === code ? [state.code, state.subject] : x]),
                   ),
               })}
           >

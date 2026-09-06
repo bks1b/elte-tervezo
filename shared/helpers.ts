@@ -64,6 +64,9 @@ export const mergeData = (target: Subjects, source: Subjects) =>
     source,
     (group, path) =>
       group.courses.map(course =>
-        void addCourse(target, path, course, group.selected, source[path[0]].name)
+        addCourse(target, path, course, group.selected, source[path[0]].name)
       ),
   );
+
+export const selectCourses = (subjects: Subjects, f: (path: CoursePath) => boolean) =>
+  flattenSubjects(subjects, (group, path) => [group.selected = f(path)]) && subjects;

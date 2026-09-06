@@ -6,7 +6,7 @@ import { Subjects } from '../../../shared/types';
 import DisabledButton from '../../components/DisabledButton';
 import { useRequest } from '../../contexts/request';
 import { valueAsProperty } from '../../utils/helpers';
-import { useAsync, useInputRef, useSelect } from '../../utils/hooks';
+import { useAsync, useSelect } from '../../utils/hooks';
 import { useSetResults, withSelected } from '../results';
 import SearchMenu from './SearchMenu';
 
@@ -23,7 +23,6 @@ export default () => {
   );
   const spec = useSelect(filterOptions?.specs, 'Szak');
   const type = useSelect(filterOptions?.optionalities, 'Kötelezőség');
-  const faculty = useInputRef();
   return <SearchMenu
     path='sheet'
     desc={
@@ -38,13 +37,9 @@ export default () => {
         </p>
       </>
     }
-    beforeForm={
-      <label>
-        <input type='checkbox' ref={faculty}/>Csak {FACULTY_NAME}-s tárgyak
-      </label>
-    }
+    label={`Csak ${FACULTY_NAME}-s tárgyak`}
     searchMode={0}
-    params={() => ({ faculty: +faculty.current!.checked + '' })}
+    params={faculty => ({ faculty })}
   >
     <h2>Szűrés</h2>
     <div className='toolbar filters'>

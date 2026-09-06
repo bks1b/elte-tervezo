@@ -3,6 +3,7 @@ import { Updater, useImmer } from 'use-immer';
 
 import { mergeData } from '../../shared/helpers';
 import { Dict, Subjects } from '../../shared/types';
+import { mapEntries } from '../../shared/utils';
 import Modal from '../components/Modal';
 import SubjectList from '../components/SubjectList';
 import { useData } from '../contexts/data';
@@ -11,8 +12,7 @@ import { makeUse } from '../utils/hooks';
 
 type Results = { subjects: Subjects; selected: Dict<boolean> };
 
-const allSelected = (subjects: Subjects, v: boolean) =>
-  Object.fromEntries(Object.keys(subjects).map(k => [k, v]));
+const allSelected = (subjects: Subjects, v: boolean) => mapEntries(subjects, ([k]) => [[k, v]]);
 
 export const withSelected = (subjects: Subjects, v: boolean) => ({
   subjects,
@@ -42,9 +42,7 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
         subjects[1](draft =>
           mergeData(
             draft,
-            Object.fromEntries(
-              Object.entries(results.subjects).filter(x => results.selected[x[0]]),
-            ),
+            mapEntries(results.subjects, x => results.selected[x[0]] ? [x] : []),
           )
         )}
       closeHandler

@@ -1,9 +1,8 @@
 import { RefreshCw, Search } from 'lucide-react';
 import { ReactNode } from 'react';
 
-import { flattenSubjects, mergeData } from '../../../shared/helpers';
+import { getGroup, mergeData, selectCourses } from '../../../shared/helpers';
 import { Dict, Subjects } from '../../../shared/types';
-import { join } from '../../../shared/utils';
 import { useData } from '../../contexts/data';
 import { useRequest } from '../../contexts/request';
 import { useInputRef } from '../../utils/hooks';
@@ -16,13 +15,13 @@ export const SEARCH_MODES = [['Tárgy', 'Oktató'], ['0', '1'], [
 ]];
 
 export default (
-  { path, desc, beforeForm, beforeInput, searchMode, params, children }: {
+  { path, desc, label, select, searchMode, params, children }: {
     path: string;
     desc: ReactNode;
-    beforeForm?: ReactNode;
-    beforeInput?: ReactNode;
+    label: string;
+    select?: ReactNode;
     searchMode: number;
-    params: () => Dict;
+    params: (x: string) => Dict;
     children: ReactNode;
   },
 ) => {
@@ -30,19 +29,15 @@ export default (
   const { request } = useRequest();
   const setResults = useSetResults();
   const query = useInputRef();
-  const bulkSearch = (data: Subjects) =>
-    request<Subjects>(path + '/bulk-search', {
-      semester: semester.value,
-      id: flattenSubjects(
-        data,
-        (group, [, , id]) => group.selected ? [id] : [],
-        undefined,
-        (selected, code) =>
-          selected.length
-            ? selected.map(x => join(code, x))
-            : [code],
-      ) + '',
-    });
+  const checkbox = useInputRef();
+  const bulkSearch = async (data: Subjects) =>
+    selectCourses(
+      await request<Subjects>(path + '/bulk-search', {
+        semester: semester.value,
+        codes: Object.keys(data).join(','),
+      }),
+      p => getGroup(data, p)?.selected,
+    );
   return <section className='surface menu'>
     <div className='toolbar'>
       {semester.select}
@@ -59,22 +54,32 @@ export default (
     <div className='operations'>
       <section>
         <h2>Keresés</h2>
-        {beforeForm}
+        <label>
+          <input type='checkbox' defaultChecked ref={checkbox}/>
+          {label}
+        </label>
         <form
           className='toolbar search'
-          onSubmit={async e => (e.preventDefault(),
-            query.current!.value
-            && setResults(
+          onSubmit={async e => {
+            e.preventDefault();
+            const trimmed = query.current!.value.trim().toLowerCase();
+            if (!trimmed) return;
+            const match = trimmed.match(/^(.+)-(\d{1,2})$/);
+            setResults(
               withSelected(
-                await request<Subjects>(path + '/search', {
-                  query: query.current!.value,
-                  ...params(),
-                }),
+                selectCourses(
+                  await request<Subjects>(path + '/search', {
+                    query: match?.[1] || trimmed,
+                    ...params(+checkbox.current!.checked + ''),
+                  }),
+                  p => match?.[2] === p[2],
+                ),
                 false,
               ),
-            ))}
+            );
+          }}
         >
-          {beforeInput}
+          {select}
           <input placeholder={SEARCH_MODES[2][searchMode]} ref={query} style={{ width: '100%' }}/>
           <button type='submit'>
             <Search/>

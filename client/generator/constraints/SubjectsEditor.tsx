@@ -12,6 +12,7 @@ import {
 } from '../../../shared/helpers';
 import { addCourse } from '../../../shared/parsers';
 import { CoursePath, Dict, Subjects } from '../../../shared/types';
+import { mapEntries } from '../../../shared/utils';
 import DisabledButton from '../../components/DisabledButton';
 import Modal from '../../components/Modal';
 import SubjectList from '../../components/SubjectList';
@@ -38,12 +39,12 @@ export default (
   const setModal = useSetModal();
   const mergeData = useImmer<MergeData | undefined>(undefined);
   const codes = Object.keys(subjects[0]);
-  const prefixes = Object.fromEntries(
-    Object.entries(
-      codes.reduce((a, x) => ((a[x.slice(0, -1)] ||= []).push(x), a), {} as Dict<string[]>),
-    ).filter(x => x[1].length === 2).map((
-      [prefix, source],
-    ) => [prefix, { source, target: prefix + source.map(x => x.at(-1)).sort().join('') }]),
+  const prefixes = mapEntries(
+    codes.reduce((a, x) => ((a[x.slice(0, -1)] ||= []).push(x), a), {} as Dict<string[]>),
+    ([prefix, source]) =>
+      source.length === 2
+        ? [[prefix, { source, target: prefix + source.map(x => x.at(-1)).sort().join('') }]]
+        : [],
   );
   const handleMerge = (data: MergeData) => {
     const target = data.target.trim();
@@ -66,12 +67,7 @@ export default (
       subjects,
       draft => (group, path) =>
         group.courses.map(course =>
-          void addCourse(
-            draft,
-            [target].concat(path.slice(1)) as CoursePath,
-            course,
-            group.selected,
-          )
+          addCourse(draft, [target].concat(path.slice(1)) as CoursePath, course, group.selected)
         ),
     );
     mergeSubjects(

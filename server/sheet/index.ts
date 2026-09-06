@@ -1,33 +1,33 @@
 import Fuse from 'fuse.js';
-import { produce } from 'immer';
 
 import { isSpring } from '../../shared/dates.js';
-import { courseId, flattenSubjects, mergeData } from '../../shared/helpers.js';
-import { Subjects } from '../../shared/types.js';
+import { Dict, Subjects } from '../../shared/types.js';
 import { intersects } from '../../shared/utils.js';
-import { GRADES, GROUPS, ID_SUFFIX, memoize, normalizeQuery } from '../utils.js';
+import { GRADES, GROUPS, memoize } from '../utils.js';
 import data from './data.js';
 
 const CODE_LIMIT = 20;
 const NAME_LIMIT = 20;
 const RESULT_LIMIT = 30;
 
-const mapCodes = <T>(subjects: Subjects, arr: T[], code: (x: T) => string) =>
-  Object.fromEntries(arr.map(x => [code(x), subjects[code(x)]]));
+const mapCodes = (subjects: Subjects, arr: string[], aliases?: Dict) =>
+  Object.fromEntries(arr.map(code => [code, subjects[aliases?.[code] || code]]));
 
 export const getGroupCounts = memoize(
   data,
   ({ facultySubjects }) =>
     Object.fromEntries(
-      GROUPS[1].map(([spec]) => [
-        spec,
+      GROUPS[1].map(([group]) => [
+        group,
         Object.fromEntries(
           GRADES.slice(1).map(grade =>
             [
               grade,
-              Object.entries(facultySubjects).filter(x =>
-                intersects([2 * +grade - +!isSpring], x[1].semesters, true)
-              ).reduce((a, b) => Math.max(a, b[1].courseSpecs[spec] ?? 0), 0),
+              Object.values(facultySubjects).filter(({ specs }) =>
+                Object.values(specs).some(({ semesters }) =>
+                  intersects([2 * +grade - +!isSpring], semesters, true)
+                )
+              ).reduce((max, { groupCounts }) => Math.max(max, groupCounts[group] ?? 0), 0),
             ] as const
           ),
         ),
@@ -37,64 +37,80 @@ export const getGroupCounts = memoize(
 
 export const getOptionalities = memoize(
   data,
-  ({ facultySubjects }) => (ids: string[]) =>
-    ids.flatMap(id => id in facultySubjects ? [[id, facultySubjects[id].optionality]] : []),
+  ({ facultySubjects, aliases }) => (codes: string[]) =>
+    codes.flatMap(code =>
+      aliases[code] || facultySubjects[code]
+        ? [[code, Object.values(facultySubjects[aliases[code] || code].specs)[0]?.optionality]]
+        : []
+    ),
 );
-export const getSearchHandler = memoize(data, ({ subjects, facultySubjects, facultyPrefixes }) => {
-  const arr = Object.entries(subjects).map(x => ({ code: x[0], name: x[1].name }));
-  const fuses = [arr, arr.filter(x => x.code in facultySubjects)].map(docs => ({
+
+export const resolveAliases = memoize(
+  data,
+  ({ facultySubjects }) => (code: string) =>
+    Object.values(facultySubjects).flatMap(({ aliases }) => {
+      const matches = aliases.filter(alias =>
+        code.length / alias.length >= 0.35 && alias.toLowerCase().includes(code)
+      );
+      return matches.length
+        ? [{
+          code: matches.reduce((min, match) => match.length < min.length ? match : min),
+          aliases,
+        }]
+        : [];
+    }).sort((a, b) => a.code.length - b.code.length),
+);
+
+export const search = memoize(data, ({ subjects, facultySubjects, aliases }) => {
+  const fuses = [false, true].map(faculty =>
+    Object.entries(subjects).filter(x => !faculty || facultySubjects[x[0]]).map((
+      [code, { name }],
+    ) => ({ code, name, aliases: facultySubjects[code] ? facultySubjects[code].aliases : [code] }))
+  ).map(docs => ({
     name: new Fuse(docs, {
       keys: ['name'],
-      threshold: 0.4,
+      threshold: 0.3,
       ignoreLocation: true,
       ignoreDiacritics: true,
     }),
-    code: new Fuse(docs, { keys: ['code'], threshold: 0.4, ignoreLocation: true }),
+    code: new Fuse(docs, {
+      keys: ['aliases'],
+      threshold: 0.3,
+      ignoreLocation: true,
+      includeMatches: true,
+    }),
   }));
-  const search = (query: string, faculty: number, exactId = false) =>
-    produce(
-      mapCodes(
-        subjects,
-        fuses[faculty].code.search(
-          facultyPrefixes.some(x => query.startsWith(x))
-            ? query.replace(ID_SUFFIX, '')
-            : query,
-          { limit: CODE_LIMIT },
-        ).concat(exactId ? [] : fuses[faculty].name.search(query, { limit: NAME_LIMIT })).sort((
-          a,
-          b,
-        ) => (a.score ?? 1) - (b.score ?? 1)).slice(0, RESULT_LIMIT),
-        x => x.item.code,
-      ),
-      result =>
-        void flattenSubjects(
-          result as Subjects,
-          (group, path) => (group.selected = query === courseId(path).toLowerCase()) ? [true] : [],
-          undefined,
-          (selected, code) => {
-            if (exactId && !selected.length) delete result[code];
-            return [];
-          },
+  return (query: string, faculty: boolean) =>
+    mapCodes(
+      subjects,
+      Object.values(
+        fuses[+faculty].code.search(query, { limit: CODE_LIMIT }).concat(
+          fuses[+faculty].name.search(query, { limit: NAME_LIMIT }),
+        ).sort((a, b) => (a.score ?? 1) - (b.score ?? 1)).slice(0, RESULT_LIMIT).reduce(
+          (codes, { matches, item }) => (codes[item.code] = (matches?.find(m =>
+            m.value?.toLowerCase().includes(query)
+          ) || matches?.[0])?.value || codes[item.code] || item.code,
+            codes),
+          {} as Dict,
         ),
-    );
-  return {
-    search,
-    bulkSearch: (ids: string[]) =>
-      ids.map(id => search(normalizeQuery(id), 0, true)).reduce(
-        (x, result) => produce(x, draft => mergeData(draft, result)),
-        {},
       ),
-  };
+      aliases,
+    );
 });
+
+export const bulkSearch = memoize(
+  data,
+  ({ subjects, aliases }) => (codes: string[]) => mapCodes(subjects, codes, aliases),
+);
 
 export const filter = memoize(
   data,
   ({ subjects, facultySubjects }) => (spec: string, type: string, ...range: [number, number]) =>
     mapCodes(
       subjects,
-      Object.entries(facultySubjects).filter(x =>
-        x[1].spec === spec && x[1].optionality === type && intersects(range, x[1].semesters, true)
+      Object.keys(facultySubjects).filter(code =>
+        facultySubjects[code].specs[spec]?.optionality === type
+        && intersects(range, facultySubjects[code].specs[spec].semesters, true)
       ),
-      x => x[0],
     ),
 );

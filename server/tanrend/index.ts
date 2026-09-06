@@ -1,11 +1,13 @@
-import { TANREND_URL } from '../../shared/helpers.js';
+import { selectCourses, TANREND_URL } from '../../shared/helpers.js';
 import { Dict, Subjects } from '../../shared/types.js';
 import cache from '../cache.js';
-import { getGroupCounts } from '../sheet/index.js';
-import { GRADES, GROUPS, ID_SUFFIX, normalizeQuery } from '../utils.js';
+import { getGroupCounts, resolveAliases } from '../sheet/index.js';
+import { COURSE_ID, GRADES, GROUPS } from '../utils.js';
 import parse from './parser.js';
 
 const CACHE_KEY = 'groups';
+
+const SEARCH_MODES = [['keresnevre', 'keres_kod_azon'], ['keres_okt', 'keres_oktnk']];
 
 const request = (path: string, body: Dict = {}, post?: true) =>
   fetch(
@@ -13,29 +15,41 @@ const request = (path: string, body: Dict = {}, post?: true) =>
     post && { method: 'POST', body: new URLSearchParams(body) },
   ).then(res => res.text());
 
-export const SEARCH_MODES = [['keresnevre', 'keres_kod_azon'], ['keres_okt', 'keres_oktnk']];
+const handleSearch = async (
+  semester: string,
+  query: string,
+  mode: string,
+  resolve: boolean,
+  subjects: Subjects,
+) => {
+  for (
+    const { code, aliases } of [
+      ...mode === SEARCH_MODES[0][1] && resolve && (await resolveAliases())?.(query) || [],
+      { aliases: [query] },
+    ]
+  ) {
+    for (const alias of aliases) {
+      for (
+        const row of (await request('tanrendnavigation.php', { f: semester, m: mode, k: alias }))
+          .matchAll(/<tr>(.+?)<\/tr>/g).drop(1)
+      ) {
+        parse(subjects, Array.from(row[1].matchAll(/<td .+?>(.+?)</g)).map(x => x[1]), code);
+      }
+    }
+  }
+  return subjects;
+};
 
-export const search = (semester: string, query: string, mode: string, subjects: Subjects = {}) =>
-  request('tanrendnavigation.php', {
-    f: semester,
-    m: mode,
-    k: mode === SEARCH_MODES[0][1] ? query.replace(ID_SUFFIX, '') : query,
-  }).then(page =>
-    Array.from(page.matchAll(/<tr>(.+?)<\/tr>/g)).slice(1).reduce(
-      (_, row) =>
-        parse(
-          subjects,
-          Array.from(row[1].matchAll(/<td .+?>(.+?)</g)).map(x => x[1]),
-          ...mode === SEARCH_MODES[0][1] ? [query] : [],
-        ),
-      subjects,
-    )
+export const search = async (semester: string, query: string, teacher: boolean, resolve: boolean) =>
+  SEARCH_MODES[+teacher].reduce(
+    async (subjects, mode) => handleSearch(semester, query, mode, resolve, await subjects),
+    Promise.resolve({} as Subjects),
   );
 
-export const bulkSearch = (semester: string, ids: string[]) =>
-  ids.reduce(
-    async (subjects, id) =>
-      search(semester, normalizeQuery(id), SEARCH_MODES[0][1], await subjects),
+export const bulkSearch = async (semester: string, codes: string[], resolve = true) =>
+  codes.reduce(
+    async (subjects, code) =>
+      handleSearch(semester, code.toLowerCase(), SEARCH_MODES[0][1], resolve, await subjects),
     Promise.resolve({} as Subjects),
   );
 
@@ -63,12 +77,22 @@ export const getGroups = cache(
     ),
 );
 
-export const getGroup = (semester: string, group: string, grade: string) =>
-  request('szakostanrend.php', {
-    felev: semester,
-    szakkod: group,
-    evfolyam: grade,
-    submit: 'keres_szakra',
-  }, true).then(page =>
-    Array.from(page.matchAll(/<div class="course".+?>([^<]+?) /g)).map(m => m[1])
+export const getGroup = async (semester: string, group: string, grade: string) => {
+  const codes: Dict<Set<string>> = {};
+  for (
+    const cell
+      of (await request('szakostanrend.php', {
+        felev: semester,
+        szakkod: group,
+        evfolyam: grade,
+        submit: 'keres_szakra',
+      }, true)).matchAll(/<div class="course".+?>([^<]+?) /g)
+  ) {
+    const match = cell[1].match(COURSE_ID);
+    if (match) (codes[match[1]] ||= new Set()).add(match[2]);
+  }
+  return selectCourses(
+    await bulkSearch(semester, Object.keys(codes), false),
+    ([code, , id]) => !!codes[code]?.has(id),
   );
+};

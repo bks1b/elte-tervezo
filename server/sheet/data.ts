@@ -3,7 +3,7 @@ import { read, utils } from 'xlsx';
 import { FACULTY_NAME, SHEET_URL } from '../../shared/helpers.js';
 import parseSheet from '../../shared/parseSheet.js';
 import { Dict, Subjects } from '../../shared/types.js';
-import { increment } from '../../shared/utils.js';
+import { increment, mapEntries } from '../../shared/utils.js';
 import cache from '../cache.js';
 import { GROUPS } from '../utils.js';
 
@@ -35,61 +35,81 @@ export default cache(CACHE_KEY, async () => {
     subjects: {} as Subjects,
     facultySubjects: {} as Record<
       string,
-      { spec: string; optionality: string; semesters: number[]; courseSpecs: Dict<number> }
+      {
+        aliases: Set<string>;
+        specs: Dict<{ optionality: string; semesters: number[] }>;
+        groupCounts: Dict<number>;
+      }
     >,
+    aliases: {} as Dict,
     courseTypes: {} as Dict<number>,
-    facultyPrefixes: new Set<string>(),
     filterOptions: { specs: {} as Dict<number>, optionalities: new Set<string>(), maxSemester: 0 },
   };
+  let defaultCode: string | undefined;
+  let facultySubject: typeof result.facultySubjects[string] | undefined;
   for (
     const row of utils.sheet_to_json(
       Object.values(read(await (await fetch(SHEET_URL + filename)).arrayBuffer()).Sheets)[0],
       { range: 2, header: 1, raw: true },
     ) as string[][]
   ) {
-    const code = row[SheetColumn.CODE] || row[SheetColumn.DEFAULT_CODE];
-    const type = row[SheetColumn.TYPE];
-    const id = row[SheetColumn.ID];
-    if (!code || !type || !id) continue;
-    const note = row[SheetColumn.NOTE] ?? '';
-    parseSheet(
-      result.subjects,
-      [code, type, id],
-      row[SheetColumn.NAME] ?? '',
-      row[SheetColumn.TEACHER]?.split(/\s*,\s*/) || [],
-      note,
-    );
-    increment(result.courseTypes, type);
+    if (row[SheetColumn.FACULTY]) {
+      defaultCode = row[SheetColumn.DEFAULT_CODE];
+      if (result.aliases[defaultCode]) {
+        result.facultySubjects[result.aliases[defaultCode]].aliases.delete(defaultCode);
+        delete result.aliases[defaultCode];
+      }
+      parseSheet(
+        result.subjects,
+        [defaultCode, row[SheetColumn.TYPE], row[SheetColumn.ID]],
+        row[SheetColumn.NAME] ?? '',
+        row[SheetColumn.TEACHER]?.split(/\s*,\s*/) || [],
+        row[SheetColumn.NOTE] ?? '',
+      );
+      increment(result.courseTypes, row[SheetColumn.TYPE]);
+      if (row[SheetColumn.FACULTY] !== FACULTY_NAME) {
+        facultySubject = undefined;
+        continue;
+      }
+      facultySubject = result.facultySubjects[defaultCode] ||= {
+        aliases: new Set([defaultCode]),
+        specs: {},
+        groupCounts: {},
+      };
+      GROUP_PATTERNS.map((str, j) =>
+        row[SheetColumn.NOTE]?.match(
+          new RegExp(`(?:^|\\s)${str}\\s(?:.*?\\s)?${GROUP_PATTERNS[1 - j]}(?:;|\\s|$)`, 'i'),
+        )
+      ).forEach(match => match && increment(facultySubject!.groupCounts, match[1]));
+    }
+    if (!facultySubject) continue;
+    const code = row[SheetColumn.CODE];
+    if (code && !result.subjects[code]) {
+      facultySubject.aliases.add(code);
+      result.aliases[code] = defaultCode!;
+    }
     const spec = row[SheetColumn.SPEC];
     const optionality = row[SheetColumn.OPTIONALITY];
-    if (!spec || !optionality || row[SheetColumn.FACULTY] !== FACULTY_NAME) continue;
-    const semesters = (match => match ? [+match[1], +(match[2] ?? match[1])] : [0, 0])(
-      (row[SheetColumn.SEMESTERS] ?? '').match(/^(\d+)(?:-(\d+))?$/),
-    );
-    result.facultySubjects[code] ||= { spec, optionality, semesters, courseSpecs: {} };
-    const prefix = code.toLowerCase().match(/^[a-z]+/)?.[0];
-    if (prefix) result.facultyPrefixes.add(prefix);
+    if (!spec || !optionality || facultySubject.specs[spec]) continue;
+    const semesters =
+      (row[SheetColumn.SEMESTERS] ?? '').match(/^(\d+)(?:-(\d+))?$/)?.flatMap((x, i) =>
+        x && i ? [+x] : []
+      ) || [0];
+    facultySubject.specs[spec] = { optionality, semesters };
     increment(result.filterOptions.specs, spec);
     result.filterOptions.optionalities.add(optionality);
-    result.filterOptions.maxSemester = Math.max(result.filterOptions.maxSemester, semesters[1]);
-    const courseSpec = [0, 1].reduce(
-      (m, i) =>
-        m
-          ?? note.match(
-            new RegExp(
-              `(?:^|\\s)${GROUP_PATTERNS[i]}(?:\\s|\\s.*?\\s)${GROUP_PATTERNS[1 - i]}(?:\\s|$)`,
-            ),
-          )?.[1],
-      undefined as string | undefined,
+    result.filterOptions.maxSemester = Math.max(
+      result.filterOptions.maxSemester,
+      semesters[1] ?? semesters[0],
     );
-    if (courseSpec)
-      increment(result.facultySubjects[code].courseSpecs, courseSpec);
   }
   return {
-    subjects: result.subjects,
-    facultySubjects: result.facultySubjects,
+    ...result,
+    facultySubjects: mapEntries(
+      result.facultySubjects,
+      x => [[x[0], { ...x[1], aliases: Array.from(x[1].aliases) }]],
+    ),
     courseTypes: sortMap(result.courseTypes),
-    facultyPrefixes: Array.from(result.facultyPrefixes),
     filterOptions: {
       ...result.filterOptions,
       specs: sortMap(result.filterOptions.specs),

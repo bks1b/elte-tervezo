@@ -1,4 +1,4 @@
-import { selectCourses, TANREND_URL } from '../../shared/helpers.js';
+import { mergeData, selectCourses, TANREND_URL } from '../../shared/helpers.js';
 import { Dict, Subjects } from '../../shared/types.js';
 import cache from '../cache.js';
 import { getGroupCounts, resolveAliases } from '../sheet/index.js';
@@ -22,21 +22,21 @@ const handleSearch = async (
   resolve: boolean,
   subjects: Subjects,
 ) => {
-  for (
-    const { code, aliases } of [
-      ...mode === SEARCH_MODES[0][1] && resolve && (await resolveAliases())?.(query) || [],
-      { aliases: [query] },
-    ]
-  ) {
-    for (const alias of aliases) {
-      for (
-        const row of (await request('tanrendnavigation.php', { f: semester, m: mode, k: alias }))
-          .matchAll(/<tr>(.+?)<\/tr>/g).drop(1)
-      ) {
-        parse(subjects, Array.from(row[1].matchAll(/<td .+?>(.+?)</g)).map(x => x[1]), code);
-      }
+  const matches = mode === SEARCH_MODES[0][1] && resolve && (await resolveAliases())?.(query) || [];
+  for (const alias of matches.flatMap(x => x.aliases).concat([query])) {
+    for (
+      const row of (await request('tanrendnavigation.php', { f: semester, m: mode, k: alias }))
+        .matchAll(/<tr>(.+?)<\/tr>/g).drop(1)
+    ) {
+      parse(subjects, Array.from(row[1].matchAll(/<td .+?>(.+?)</g)).map(x => x[1]));
     }
   }
+  matches.forEach(({ code, aliases }) =>
+    aliases.filter(alias => subjects[alias] && alias !== code).forEach(alias => {
+      mergeData(subjects, { [code]: subjects[alias] });
+      delete subjects[alias];
+    })
+  );
   return subjects;
 };
 

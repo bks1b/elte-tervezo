@@ -13,7 +13,7 @@ enum TanrendColumn {
 
 const EXCLUDED_TYPES = ['teremfoglalás', 'elfoglaltság'];
 
-export default (target: Subjects, row: string[], alias?: string) => {
+export default (target: Subjects, row: string[]) => {
   const [fullId = '', type = ''] = row[TanrendColumn.ID].split(' ');
   const typeName = type.slice(1, -1);
   if (EXCLUDED_TYPES.includes(typeName)) return;
@@ -23,7 +23,7 @@ export default (target: Subjects, row: string[], alias?: string) => {
   const notes: string[] = [];
   addCourse(
     target,
-    [!target[code] && alias || code, capitalize(typeName), id],
+    [code, capitalize(typeName), id],
     {
       locations: row[TanrendColumn.LOCATION] && row[TanrendColumn.LOCATION] !== '-'
         ? [{

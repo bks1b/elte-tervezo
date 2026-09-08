@@ -12,7 +12,7 @@ export default <T,>(
   { get, fallback, checkbox, buttons, title, column, children }: {
     get: Parameters<typeof checkboxAsProperty<T, Subjects>>;
     fallback: ReactNode;
-    checkbox?: (code: string) => ReactNode;
+    checkbox?: (x: NonNullable<T>) => Dict<boolean>;
     buttons?: (code: string) => ReactNode;
     title?: (code: string) => ReactNode;
     column?: (path: CoursePath, index: number) => ReactNode;
@@ -40,7 +40,8 @@ export default <T,>(
         <article key={code}>
           <header>
             <div>
-              {checkbox?.(code)}
+              {checkbox
+                && <input type='checkbox' {...checkboxAsProperty(get[0], checkbox)(code)()}/>}
               <h1>{subjects[code].name} {title?.(code) || `(${code})`}</h1>
               <button className='circle' onClick={() => setOpen({ ...open, [code]: !open[code] })}>
                 {open[code] ? <ChevronUp/> : <ChevronDown/>}
@@ -106,7 +107,8 @@ export default <T,>(
                       type='checkbox'
                       {...checkboxAsProperty(get[0], x => getGroup(get[1]?.(x) || x, data.path))(
                         'selected',
-                      )()}
+                      )(undefined, undefined, (draft, x) =>
+                        x && checkbox && (checkbox(draft)[code] = true))}
                     />
                   </td>}
                   <CourseRow {...data}>{canEdit && column?.(data.path, data.index)}</CourseRow>

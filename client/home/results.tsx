@@ -7,7 +7,7 @@ import { mapEntries } from '../../shared/utils';
 import Modal from '../components/Modal';
 import SubjectList from '../components/SubjectList';
 import { useData } from '../contexts/data';
-import { checkboxAsProperty, options, wrapNonEmpty } from '../utils/helpers';
+import { options, wrapNonEmpty } from '../utils/helpers';
 import { makeUse } from '../utils/hooks';
 
 const withSelected = (results: SearchResults, all: boolean) => ({
@@ -50,8 +50,7 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
         <SubjectList
           get={[state, x => x.subjects]}
           fallback={'Nincs találat.'}
-          checkbox={code =>
-            <input type='checkbox' {...checkboxAsProperty(state, x => x.selected)(code)()}/>}
+          checkbox={x => x.selected}
           title={code =>
             (arr =>
               arr && arr.length > 1 && <select

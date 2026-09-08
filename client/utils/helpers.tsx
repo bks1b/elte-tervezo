@@ -12,12 +12,15 @@ const makePropertyHandler =
   (
     convertTo = (x: Last[K]) => x as unknown as Element[Prop],
     convertFrom = (x: Element[Prop]) => x as unknown as Last[K],
+    onChange?: (draft: NonNullable<State>, value: Last[K]) => unknown,
   ) => ({
     [prop]: convertTo(get(state[0]!)[key]),
     onChange: (e: ChangeEvent<Element>) =>
-      state[1](draft =>
-        void (get(draft as NonNullable<State>, true)[key] = convertFrom(e.target[prop]))
-      ),
+      state[1](draft => {
+        const value = convertFrom(e.target[prop]);
+        get(draft as NonNullable<State>, true)[key] = value;
+        onChange?.(draft as NonNullable<State>, value);
+      }),
   });
 export const valueAsProperty = makePropertyHandler<HTMLInputElement | HTMLSelectElement>()('value');
 export const checkboxAsProperty = makePropertyHandler<HTMLInputElement>()('checked');

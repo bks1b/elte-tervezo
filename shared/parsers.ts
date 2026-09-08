@@ -1,6 +1,6 @@
-import { Course, CoursePath, Dict, Subjects } from './types.js';
+import { Course, CoursePath, Subjects } from './types.js';
 
-const ALIASES: Dict = { 'Gyakorlat': 'Labor' };
+const ALIASES = [['Gyakorlat', 'Labor']];
 
 export const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1).toLowerCase();
 
@@ -19,9 +19,7 @@ export const addCourse = (
   const group =
     (subject
       .courseGroups[
-        type in ALIASES && ALIASES[type] in subject.courseGroups
-          ? ALIASES[type]
-          : type
+        ALIASES.find(x => x.includes(type))?.find(x => subject.courseGroups[x]) || type
       ] ||= {})[id] ||= { selected: false, courses: [] };
   subject.name ||= name;
   group.selected ||= selected;

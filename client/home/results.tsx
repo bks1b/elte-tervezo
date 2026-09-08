@@ -1,32 +1,32 @@
 import { createContext, ReactNode } from 'react';
-import { Updater, useImmer } from 'use-immer';
+import { useImmer } from 'use-immer';
 
 import { mergeData } from '../../shared/helpers';
-import { Dict, Subjects } from '../../shared/types';
+import { Dict, SearchResults } from '../../shared/types';
 import { mapEntries } from '../../shared/utils';
 import Modal from '../components/Modal';
 import SubjectList from '../components/SubjectList';
 import { useData } from '../contexts/data';
-import { checkboxAsProperty, wrapNonEmpty } from '../utils/helpers';
+import { checkboxAsProperty, options, wrapNonEmpty } from '../utils/helpers';
 import { makeUse } from '../utils/hooks';
 
-type Results = { subjects: Subjects; selected: Dict<boolean> };
-
-const allSelected = (subjects: Subjects, v: boolean) => mapEntries(subjects, ([k]) => [[k, v]]);
-
-export const withSelected = (subjects: Subjects, v: boolean) => ({
-  subjects,
-  selected: allSelected(subjects, v),
+const withSelected = (results: SearchResults, all: boolean) => ({
+  ...results,
+  selected: mapEntries(results.subjects, ([k]) => [[k, all]]),
 });
 
-const ResultsContext = createContext<Updater<Results | undefined> | undefined>(undefined);
+const ResultsContext = createContext<((results: SearchResults, all?: boolean) => void) | undefined>(
+  undefined,
+);
 
 export const useSetResults = makeUse(ResultsContext);
 
 export const ResultsProvider = ({ children }: { children: ReactNode }) => {
   const { subjects } = useData();
-  const state = useImmer<Results | undefined>(undefined);
-  return <ResultsContext.Provider value={state[1]}>
+  const state = useImmer<SearchResults & { selected: Dict<boolean> } | undefined>(undefined);
+  return <ResultsContext.Provider
+    value={(results, all = true) => state[1](withSelected(results, all))}
+  >
     <Modal
       state={state}
       title={() => 'Találatok'}
@@ -35,8 +35,7 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
           <input
             type='checkbox'
             checked={keys.every(k => results.selected[k])}
-            onChange={e =>
-              set(r => void (r!.selected = allSelected(results.subjects, e.target.checked)))}
+            onChange={e => set(withSelected(results, e.target.checked))}
           />, Object.keys(results.selected))}
       handler={results =>
         subjects[1](draft =>
@@ -47,12 +46,28 @@ export const ResultsProvider = ({ children }: { children: ReactNode }) => {
         )}
       closeHandler
     >
-      {() =>
+      {({ aliases }) =>
         <SubjectList
           get={[state, x => x.subjects]}
           fallback={'Nincs találat.'}
           checkbox={code =>
             <input type='checkbox' {...checkboxAsProperty(state, x => x.selected)(code)()}/>}
+          title={code =>
+            (arr =>
+              arr && arr.length > 1 && <select
+                value={code}
+                onChange={e =>
+                  state[1](draft =>
+                    (['subjects', 'selected'] as const).forEach(key =>
+                      draft![key] = mapEntries(
+                        draft![key] as Dict<unknown>,
+                        x => [x[0] === code ? [e.target.value, x[1]] : x],
+                      ) as never
+                    )
+                  )}
+              >
+                {options(arr)}
+              </select>)(aliases?.find(arr => arr.includes(code)))}
         />}
     </Modal>
     {children}

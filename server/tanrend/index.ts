@@ -1,7 +1,7 @@
 import { mergeData, selectCourses, TANREND_URL } from '../../shared/helpers.js';
 import { Dict, Subjects } from '../../shared/types.js';
 import cache from '../cache.js';
-import { getGroupCounts, resolveAliases } from '../sheet/index.js';
+import { getGroupCounts, resolveAliases, withAliases } from '../sheet/index.js';
 import { COURSE_ID, GRADES, GROUPS } from '../utils.js';
 import parse from './parser.js';
 
@@ -40,17 +40,23 @@ const handleSearch = async (
   return subjects;
 };
 
+const withAliasesIf = async (x = true) => x && await withAliases() || (subjects => ({ subjects }));
+
 export const search = async (semester: string, query: string, teacher: boolean, resolve: boolean) =>
-  SEARCH_MODES[+teacher].reduce(
-    async (subjects, mode) => handleSearch(semester, query, mode, resolve, await subjects),
-    Promise.resolve({} as Subjects),
+  (await withAliasesIf(resolve))(
+    await SEARCH_MODES[+teacher].reduce(
+      async (subjects, mode) => handleSearch(semester, query, mode, resolve, await subjects),
+      Promise.resolve({} as Subjects),
+    ),
   );
 
 export const bulkSearch = async (semester: string, codes: string[], resolve = true) =>
-  codes.reduce(
-    async (subjects, code) =>
-      handleSearch(semester, code.toLowerCase(), SEARCH_MODES[0][1], resolve, await subjects),
-    Promise.resolve({} as Subjects),
+  (await withAliasesIf())(
+    await codes.reduce(
+      async (subjects, code) =>
+        handleSearch(semester, code.toLowerCase(), SEARCH_MODES[0][1], resolve, await subjects),
+      Promise.resolve({} as Subjects),
+    ),
   );
 
 export const getGroups = cache(

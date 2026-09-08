@@ -3,14 +3,14 @@ import { useMemo } from 'react';
 import { useImmer } from 'use-immer';
 
 import { TANREND_URL } from '../../../shared/helpers';
-import { Dict, Subjects } from '../../../shared/types';
+import { Dict, SearchResults } from '../../../shared/types';
 import { join } from '../../../shared/utils';
 import DisabledButton from '../../components/DisabledButton';
 import { useData } from '../../contexts/data';
 import { useRequest } from '../../contexts/request';
 import { LoadingSelect, options, valueAsProperty } from '../../utils/helpers';
 import { useAsync, useSelect } from '../../utils/hooks';
-import { useSetResults, withSelected } from '../results';
+import { useSetResults } from '../results';
 import SearchMenu, { SEARCH_MODES } from './SearchMenu';
 
 export default () => {
@@ -64,11 +64,11 @@ export default () => {
       <DisabledButton
         disabled={!groups}
         onClick={() =>
-          request<Subjects>('tanrend/group', {
+          request<SearchResults>('tanrend/group', {
             semester: semester.value,
             group: group.value!,
             grade: grade[0]!.value,
-          }).then(res => setResults(withSelected(res, true)))}
+          }).then(setResults)}
       >
         <Filter/>
         Betöltés

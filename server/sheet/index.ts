@@ -10,8 +10,22 @@ const CODE_LIMIT = 20;
 const NAME_LIMIT = 20;
 const RESULT_LIMIT = 30;
 
-const mapCodes = (subjects: Subjects, arr: string[], aliases?: Dict) =>
-  Object.fromEntries(arr.map(code => [code, subjects[aliases?.[code] || code]]));
+export const withAliases = memoize(
+  data,
+  ({ facultySubjects, aliases }) => (subjects: Subjects) => ({
+    subjects,
+    aliases: Object.keys(subjects).map(code => facultySubjects[aliases[code] || code]?.aliases)
+      .filter(x => x),
+  }),
+);
+
+export const bulkSearch = memoize(
+  data,
+  ({ subjects, aliases }) => async (arr: string[]) =>
+    (await withAliases())?.(
+      Object.fromEntries(arr.map(code => [code, subjects[aliases[code] || code]])),
+    ),
+);
 
 export const getGroupCounts = memoize(
   data,
@@ -61,7 +75,7 @@ export const resolveAliases = memoize(
     }).sort((a, b) => a.code.length - b.code.length),
 );
 
-export const search = memoize(data, ({ subjects, facultySubjects, aliases }) => {
+export const search = memoize(data, ({ subjects, facultySubjects }) => {
   const fuses = [false, true].map(faculty =>
     Object.entries(subjects).filter(x => !faculty || facultySubjects[x[0]]).map((
       [code, { name }],
@@ -80,9 +94,8 @@ export const search = memoize(data, ({ subjects, facultySubjects, aliases }) => 
       includeMatches: true,
     }),
   }));
-  return (query: string, faculty: boolean) =>
-    mapCodes(
-      subjects,
+  return async (query: string, faculty: boolean) =>
+    (await bulkSearch())?.(
       Object.values(
         fuses[+faculty].code.search(query, { limit: CODE_LIMIT }).concat(
           fuses[+faculty].name.search(query, { limit: NAME_LIMIT }),
@@ -94,20 +107,13 @@ export const search = memoize(data, ({ subjects, facultySubjects, aliases }) => 
           {} as Dict,
         ),
       ),
-      aliases,
     );
 });
 
-export const bulkSearch = memoize(
-  data,
-  ({ subjects, aliases }) => (codes: string[]) => mapCodes(subjects, codes, aliases),
-);
-
 export const filter = memoize(
   data,
-  ({ subjects, facultySubjects }) => (spec: string, type: string, ...range: [number, number]) =>
-    mapCodes(
-      subjects,
+  ({ facultySubjects }) => async (spec: string, type: string, ...range: [number, number]) =>
+    (await bulkSearch())?.(
       Object.keys(facultySubjects).filter(code =>
         facultySubjects[code].specs[spec]?.optionality === type
         && intersects(range, facultySubjects[code].specs[spec].semesters, true)

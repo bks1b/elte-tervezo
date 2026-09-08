@@ -2,12 +2,12 @@ import { Filter } from 'lucide-react';
 import { useImmer } from 'use-immer';
 
 import { FACULTY_NAME, SHEET_URL } from '../../../shared/helpers';
-import { Subjects } from '../../../shared/types';
+import { SearchResults } from '../../../shared/types';
 import DisabledButton from '../../components/DisabledButton';
 import { useRequest } from '../../contexts/request';
 import { valueAsProperty } from '../../utils/helpers';
 import { useAsync, useSelect } from '../../utils/hooks';
-import { useSetResults, withSelected } from '../results';
+import { useSetResults } from '../results';
 import SearchMenu from './SearchMenu';
 
 export default () => {
@@ -56,14 +56,12 @@ export default () => {
         disabled={!filterOptions}
         onClick={async () =>
           setResults(
-            withSelected(
-              await request<Subjects>('sheet/filter', {
-                spec: spec.value!,
-                type: type.value!,
-                ...range[0],
-              }),
-              false,
-            ),
+            await request<SearchResults>('sheet/filter', {
+              spec: spec.value!,
+              type: type.value!,
+              ...range[0],
+            }),
+            false,
           )}
       >
         <Filter/>

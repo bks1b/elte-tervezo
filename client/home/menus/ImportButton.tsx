@@ -2,10 +2,10 @@ import { Ellipsis, Upload } from 'lucide-react';
 import { read, utils } from 'xlsx';
 
 import parseSheet from '../../../shared/parseSheet';
-import { Subjects } from '../../../shared/types';
+import { SearchResults, Subjects } from '../../../shared/types';
 import { ModalType, useSetModal } from '../../contexts/modal';
 import { upload } from '../../utils/browser';
-import { useSetResults, withSelected } from '../results';
+import { useSetResults } from '../results';
 
 const SHEET_NAME = 'Felvett kurzusok';
 
@@ -18,7 +18,7 @@ enum ImportColumn {
   TEACHER = 7,
 }
 
-export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
+export default ({ handle }: { handle?: (x: Subjects) => Promise<SearchResults> }) => {
   const setResults = useSetResults();
   const setModal = useSetModal();
   return <button
@@ -36,7 +36,7 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
           upload('.xlsx').then(file => file.arrayBuffer()).then(read).then(async workbook => {
             if (workbook.SheetNames[0] !== SHEET_NAME)
               throw setModal(ModalType.ERROR, 'A fájl nem az elvárt forrásból származik.');
-            const results: Subjects = {};
+            const subjects: Subjects = {};
             for (
               const row of utils.sheet_to_json(workbook.Sheets[SHEET_NAME], {
                 range: 1,
@@ -45,7 +45,7 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
               }) as string[][]
             ) {
               parseSheet(
-                results,
+                subjects,
                 [row[ImportColumn.CODE], row[ImportColumn.TYPE], row[ImportColumn.ID]],
                 row[ImportColumn.NAME],
                 row[ImportColumn.TEACHER].split(', '),
@@ -53,8 +53,7 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<void> }) => {
                 true,
               );
             }
-            await handle?.(results);
-            setResults(withSelected(results, true));
+            setResults(await handle?.(subjects) || { subjects });
           }),
       )}
   >

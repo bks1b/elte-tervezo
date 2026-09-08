@@ -5,6 +5,7 @@ import {
   CoursePath,
   CourseWithSchedule,
   Dict,
+  SearchResults,
   Subject,
   Subjects,
 } from './types';
@@ -68,5 +69,5 @@ export const mergeData = (target: Subjects, source: Subjects) =>
       ),
   );
 
-export const selectCourses = (subjects: Subjects, f: (path: CoursePath) => boolean) =>
-  flattenSubjects(subjects, (group, path) => [group.selected = f(path)]) && subjects;
+export const selectCourses = (results: SearchResults, f: (path: CoursePath) => boolean) =>
+  flattenSubjects(results.subjects, (group, path) => [group.selected = f(path)]) && results;

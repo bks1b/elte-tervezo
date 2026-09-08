@@ -9,11 +9,12 @@ import { checkboxAsProperty, wrapNonEmpty } from '../utils/helpers';
 import CourseRow, { CourseHeaders } from './CourseRow';
 
 export default <T,>(
-  { get, fallback, checkbox, buttons, column, children }: {
+  { get, fallback, checkbox, buttons, title, column, children }: {
     get: Parameters<typeof checkboxAsProperty<T, Subjects>>;
     fallback: ReactNode;
     checkbox?: (code: string) => ReactNode;
     buttons?: (code: string) => ReactNode;
+    title?: (code: string) => ReactNode;
     column?: (path: CoursePath, index: number) => ReactNode;
     children?: (code: string) => ReactNode;
   },
@@ -40,7 +41,7 @@ export default <T,>(
           <header>
             <div>
               {checkbox?.(code)}
-              <h1>{subjects[code].name} ({code})</h1>
+              <h1>{subjects[code].name} {title?.(code) || `(${code})`}</h1>
               <button className='circle' onClick={() => setOpen({ ...open, [code]: !open[code] })}>
                 {open[code] ? <ChevronUp/> : <ChevronDown/>}
               </button>

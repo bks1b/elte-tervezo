@@ -19,3 +19,5 @@ export type Course = {
 export type CourseWithSchedule = Course & { [K in 'day' | 'time']: NonNullable<Course[K]> };
 
 export type Dict<T = string> = Record<string, T>;
+
+export type SearchResults = { subjects: Subjects; aliases?: string[][] };

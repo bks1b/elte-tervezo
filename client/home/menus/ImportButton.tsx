@@ -28,14 +28,25 @@ export default ({ handle }: { handle?: (x: Subjects) => Promise<SearchResults> }
         <p>
           A táblázatot Neptunban a <b>Menü &gt; Tárgyak &gt; Felvett kurzusok</b> oldalon, a{' '}
           <b>
-            <Ellipsis/> &gt; Exportálás
+            <Ellipsis/> &gt; Export
           </b>{' '}
           gombbal lehet letölteni.
         </p>,
         () =>
           upload('.xlsx').then(file => file.arrayBuffer()).then(read).then(async workbook => {
-            if (workbook.SheetNames[0] !== SHEET_NAME)
-              throw setModal(ModalType.ERROR, 'A fájl nem az elvárt forrásból származik.');
+            if (workbook.SheetNames[0] !== SHEET_NAME) {
+              throw setModal(
+                ModalType.ERROR,
+                <>
+                  <p>
+                    A táblázat munkalapjának elvárt neve: <b>{SHEET_NAME}</b>
+                  </p>
+                  <p>
+                    A feltöltött munkalapok: <b>{workbook.SheetNames.join(', ')}</b>
+                  </p>
+                </>,
+              );
+            }
             const subjects: Subjects = {};
             for (
               const row of utils.sheet_to_json(workbook.Sheets[SHEET_NAME], {

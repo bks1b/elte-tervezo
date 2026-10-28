@@ -8,8 +8,9 @@ ELTE órarendtervező is a React application for selecting ELTE courses, finding
 
 - `client/` contains the Vite React application and browser state.
 - `api/` contains thin Vercel endpoint adapters.
-- `server/` contains external data access, parsing, and caching.
+- `server/` contains external data access, parsing, and cache/database integration.
 - `shared/` contains types and pure utilities used across the client and server.
+- `migrations/` contains database schema migrations for the Neon Postgres database.
 - Keep request handling in `api/`, reusable server logic in `server/`, and cross-boundary logic in `shared/`.
 
 ## Code Style
@@ -30,6 +31,7 @@ ELTE órarendtervező is a React application for selecting ELTE courses, finding
 
 - Use `.js` extensions in server-side ESM imports.
 - Reuse the existing endpoint, memoization, cache, context, and shared utility helpers.
+- Use `DATABASE_URL` for Neon access and apply schema changes through migrations rather than request-time DDL.
 - Keep schedule generation deterministic and handle incomplete or invalid course data explicitly.
 - Treat URL sharing, browser storage, and cache formats as compatibility-sensitive.
 - Keep browser-only code out of `server/` and `api/`.

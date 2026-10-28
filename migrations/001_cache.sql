@@ -1,0 +1,4 @@
+CREATE TABLE cache (
+  key TEXT PRIMARY KEY,
+  value BYTEA NOT NULL
+);
